@@ -15,11 +15,7 @@ fn download_song(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> {
     if urls.len() == 1 {
         Ok(urls[0].to_string())
     } else {
-        let url = urls
-            .iter()
-            .filter(|s| s.find("128").is_none())
-            .next()
-            .unwrap();
+        let url = urls.iter().find(|s| !s.contains("128")).unwrap();
         Ok(url.to_string())
     }
 }
@@ -27,7 +23,7 @@ fn download_song(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> {
 fn navigate_to_song(
     browser: &Browser,
     href: &str,
-    exist_songs: &Vec<String>,
+    exist_songs: &[String],
     artist_name: &str,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
     let song_name = href
@@ -43,7 +39,7 @@ fn navigate_to_song(
 
     let url = if !exist_songs.contains(&song_name) {
         let tab = browser.new_tab()?;
-        tab.navigate_to(&href)?;
+        tab.navigate_to(href)?;
 
         let url = download_song(&tab)?;
         tab.close_target()?;
@@ -109,7 +105,7 @@ fn get_list_of_songs(artist_name: &str) -> Result<Vec<String>, Box<dyn std::erro
 
             artist == artist_name
         })
-        .map(|entry| get_songs_name(&artist_name, entry.path()))
+        .map(|entry| get_songs_name(artist_name, entry.path()))
         .flat_map(Result::ok)
         .concat();
 
@@ -123,7 +119,7 @@ fn get_single_songs_urls(
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
     let tab = browser.new_tab()?;
 
-    let songs = get_list_of_songs(&artist_name)?;
+    let songs = get_list_of_songs(artist_name)?;
 
     tab.navigate_to(&format!("{url}/?section=music"))?;
 
@@ -133,7 +129,7 @@ fn get_single_songs_urls(
     let urls = elements
         .par_iter()
         .map(|song| song.get_attribute_value("href").unwrap().unwrap())
-        .map(|href| navigate_to_song(&browser, &href, &songs, &artist_name).unwrap())
+        .map(|href| navigate_to_song(browser, &href, &songs, artist_name).unwrap())
         .collect::<HashMap<_, _>>();
     tab.close_target()?;
 
@@ -154,11 +150,7 @@ fn download_album2(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>>
     } else if urls.is_empty() {
         Ok("".to_string())
     } else {
-        let url = urls
-            .iter()
-            .filter(|s| s.find("128").is_none())
-            .next()
-            .unwrap();
+        let url = urls.iter().find(|s| !s.contains("128")).unwrap();
         Ok(url.to_string())
     }
 }
@@ -175,11 +167,7 @@ fn download_album(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> 
     } else if urls.is_empty() {
         Ok("".to_string())
     } else {
-        let url = urls
-            .iter()
-            .filter(|s| s.find("128").is_none())
-            .next()
-            .unwrap();
+        let url = urls.iter().find(|s| !s.contains("128")).unwrap();
         Ok(url.to_string())
     }
 }
@@ -187,7 +175,7 @@ fn download_album(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> 
 fn navigate_to_album(
     browser: &Browser,
     href: &str,
-    exist_albums: &Vec<String>,
+    exist_albums: &[String],
     artist_name: &str,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
     let album_name = href
@@ -203,7 +191,7 @@ fn navigate_to_album(
 
     let url = if !exist_albums.contains(&album_name) {
         let tab = browser.new_tab()?;
-        tab.navigate_to(&href)?;
+        tab.navigate_to(href)?;
 
         let url = match download_album(&tab) {
             Ok(x) => x,
@@ -277,7 +265,7 @@ fn get_list_of_albums(artist_name: &str) -> Result<Vec<String>, Box<dyn std::err
 
             artist == artist_name
         })
-        .map(|entry| get_albums_name(&artist_name, entry.path()))
+        .map(|entry| get_albums_name(artist_name, entry.path()))
         .filter_map(Result::ok)
         .concat();
 
@@ -291,7 +279,7 @@ fn get_album_urls(
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
     let tab = browser.new_tab()?;
 
-    let albums = get_list_of_albums(&artist_name)?;
+    let albums = get_list_of_albums(artist_name)?;
 
     tab.navigate_to(&format!("{url}/?section=album"))?;
 
@@ -301,7 +289,7 @@ fn get_album_urls(
     let urls = elements
         .par_iter()
         .map(|album| album.get_attribute_value("href").unwrap().unwrap())
-        .map(|href| navigate_to_album(&browser, &href, &albums, &artist_name).unwrap())
+        .map(|href| navigate_to_album(browser, &href, &albums, artist_name).unwrap())
         .collect::<HashMap<_, _>>();
     tab.close_target()?;
 
