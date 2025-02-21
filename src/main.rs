@@ -1,9 +1,7 @@
-use rayon::iter::ParallelIterator;
-use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
-
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use itertools::Itertools;
-use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::*;
+use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
 
 fn download_song(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> {
     let urls: Vec<_> = tab
