@@ -1,7 +1,8 @@
+use clap::Parser;
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use itertools::Itertools;
 use rayon::iter::*;
-use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
 
 fn download_song(tab: &Arc<Tab>) -> Result<String, Box<dyn std::error::Error>> {
     let urls: Vec<_> = tab
@@ -293,25 +294,30 @@ fn get_album_urls(
 
     Ok(urls)
 }
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Conf {
+    #[arg(short, long)]
+    artist_name: String,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let artist_name = "moein";
+    let artist_name = Conf::parse().artist_name;
     let url = format!("https://mymusicbaran1.ir/artists/{artist_name}");
-    let artist_name = artist_name
-        .replace("-", " ")
-        .replace("_", " ")
-        .to_lowercase();
+    let artist_name = artist_name.replace(['-', '_'], " ").to_lowercase();
 
     let browser = Browser::new(
         LaunchOptionsBuilder::default()
             .headless(false) // Set to false to show the browser
-            .build()
-            .unwrap(),
+            .build()?,
     )?;
 
     let songs_url = get_single_songs_urls(&browser, &url, &artist_name)?;
     let albums_url = get_album_urls(&browser, &url, &artist_name)?;
 
-    println!("{:?}", songs_url);
-    println!("{:?}", albums_url);
+    let mut file = fs::File::create(format!("{artist_name}.json"))?;
+    file.write_all(format!("{:?}\n{:?}", songs_url, albums_url).as_bytes())?;
+
     Ok(())
 }
