@@ -1,6 +1,5 @@
 use clap::Parser;
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
-use itertools::Itertools;
 use rayon::iter::*;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
 
@@ -296,7 +295,7 @@ fn get_album_urls(
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Conf {
-    #[arg(short, long)]
+    #[arg(value_name = "ARTIST_NAME")]
     artist_name: String,
 }
 
