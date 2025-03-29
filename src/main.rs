@@ -159,14 +159,14 @@ struct Conf {
     #[arg(value_name = "ARTIST_NAME")]
     artist_name: String,
 
-    #[arg(short, long, default_value = "/media/moosavi/files/music")]
+    #[arg(short, long, default_value = "~/Music")]
     music_dir: PathBuf,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conf = Conf::parse();
     let artist_name = conf.artist_name;
-    let url = format!("https://mymusicbaran1.ir/artists/{artist_name}");
+    let url = format!("https://musicbaran1.ir/artists/{artist_name}");
     let artist_name = artist_name.replace(['-', '_'], " ").to_lowercase();
     let exist = get_list_of_exist(&artist_name, conf.music_dir)?;
 

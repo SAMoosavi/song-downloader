@@ -59,7 +59,7 @@ fn process_artist_directory(
         if entry.file_type()?.is_dir() {
             // Process album directory
             if let Some(album_name) = path.file_name().and_then(|n| n.to_str()) {
-                albums.push(album_name.to_string());
+                albums.push(album_name.to_lowercase());
 
                 // Process musics in album
                 musics.extend(process_album_directory(path, artist_name)?);
@@ -81,7 +81,7 @@ fn process_album_directory(
         let entry = entry?;
         if entry.file_type()?.is_file() {
             if let Some(music_name) = process_music_entry(&entry, artist_name) {
-                musics.push(music_name);
+                musics.push(music_name.to_lowercase());
             }
         }
     }
