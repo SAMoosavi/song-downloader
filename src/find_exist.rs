@@ -79,10 +79,10 @@ fn process_album_directory(
 
     for entry in album_dir.read_dir()? {
         let entry = entry?;
-        if entry.file_type()?.is_file() {
-            if let Some(music_name) = process_music_entry(&entry, artist_name) {
-                musics.push(music_name.to_lowercase());
-            }
+        if entry.file_type()?.is_file()
+            && let Some(music_name) = process_music_entry(&entry, artist_name)
+        {
+            musics.push(music_name.to_lowercase());
         }
     }
 

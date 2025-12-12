@@ -1,7 +1,7 @@
 mod find_exist;
 
 use clap::Parser;
-use find_exist::{get_list_of_exist, Exist};
+use find_exist::{Exist, get_list_of_exist};
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use rayon::iter::*;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};

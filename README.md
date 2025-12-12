@@ -32,7 +32,7 @@ By default, songs are saved in `~/Music`. You can specify a custom directory:
 
 ## 📜 Example
 ```sh
-./target/release/song-downloader "Coldplay"
+./target/release/song-downloader "siavash ghomayshi"
 ```
 🔹 This will fetch download links for **siavash-ghomayshi**'s songs soen't exist them in `~/Music`.
 
