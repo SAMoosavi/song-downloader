@@ -1,5 +1,5 @@
-use std::{error::Error, fs, path::PathBuf};
 use serde::Serialize;
+use std::{error::Error, fs, path::PathBuf};
 
 #[derive(Debug, Serialize)]
 pub struct Exist {
@@ -9,21 +9,22 @@ pub struct Exist {
 
 pub fn get_list_of_exist(artist_name: &str, music_dir: PathBuf) -> Result<Exist, Box<dyn Error>> {
     // If music_dir itself is the artist dir, use it directly; otherwise search inside it
-    let artist_dirs = if normalize_name(
-        music_dir.file_name().and_then(|n| n.to_str()).unwrap_or(""),
-    ) == normalize_name(artist_name)
-    {
-        vec![music_dir]
-    } else {
-        find_artist_directories(music_dir, artist_name)?
-    };
+    let artist_dirs =
+        if normalize_name(music_dir.file_name().and_then(|n| n.to_str()).unwrap_or(""))
+            == normalize_name(artist_name)
+        {
+            vec![music_dir]
+        } else {
+            find_artist_directories(music_dir, artist_name)?
+        };
 
     // Process all found artist directories
     let mut albums = Vec::new();
     let mut musics = Vec::new();
 
     for artist_dir in &artist_dirs {
-        let (albums_in_dir, musics_in_dir) = process_artist_directory(artist_dir.clone(), artist_name)?;
+        let (albums_in_dir, musics_in_dir) =
+            process_artist_directory(artist_dir.clone(), artist_name)?;
         albums.extend(albums_in_dir);
         musics.extend(musics_in_dir);
     }
@@ -67,7 +68,7 @@ fn process_artist_directory(
         if entry.file_type()?.is_dir() {
             // Process album directory
             if let Some(album_name) = path.file_name().and_then(|n| n.to_str()) {
-                albums.push(album_name.to_lowercase());
+                albums.push(normalize_name(album_name));
 
                 // Process musics in album
                 musics.extend(process_album_directory(path, artist_name)?);
@@ -111,13 +112,15 @@ fn process_music_entry(entry: &fs::DirEntry, artist_name: &str) -> Option<String
 
 // Normalize music name
 fn normalize_music_name(file_name: &str, artist_name: &str) -> String {
-    let step1 = file_name
-        .trim_end_matches(".mp3")
-        .replace(['-', '_'], " ");
+    let step1 = file_name.trim_end_matches(".mp3").replace(['-', '_'], " ");
 
     match step1.to_lowercase().find("  ") {
         Some(pos) => step1[pos + 2..].to_lowercase().trim().to_string(),
-        None => step1.to_lowercase().replace(artist_name, "").trim().to_string(),
+        None => step1
+            .to_lowercase()
+            .replace(artist_name, "")
+            .trim()
+            .to_string(),
     }
 }
 

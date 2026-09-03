@@ -4,9 +4,8 @@ use clap::Parser;
 use find_exist::{Exist, get_list_of_exist, normalize_name};
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use rayon::iter::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
-use serde::Serialize;
 
 enum MediaType {
     Music,
@@ -62,13 +61,7 @@ fn get_urls(
                 MediaType::Album => &exist.albums,
             };
 
-            match navigate_to_media(
-                browser,
-                &href,
-                artist_name,
-                exist_list,
-                &page_type,
-            ) {
+            match navigate_to_media(browser, &href, artist_name, exist_list, &page_type) {
                 Ok((key, value)) if !value.is_empty() => Some(Ok((key, value))),
                 Ok(_) => None,
                 Err(e) => Some(Err(format!("{}: {}", href, e))),
@@ -82,7 +75,9 @@ fn get_urls(
     let mut failures = Vec::new();
     for result in results {
         match result {
-            Ok((k, v)) => { urls.insert(k, v); }
+            Ok((k, v)) => {
+                urls.insert(k, v);
+            }
             Err(f) => failures.push(f),
         }
     }
@@ -137,11 +132,14 @@ fn get_url(tab: &Arc<Tab>, page_type: &MediaType) -> Result<String, Box<dyn std:
         .collect();
 
     let url = match urls.len() {
-        0 => return Err(format!(
-            "No {} URLs found: {}",
-            page_type.file_extension().to_uppercase(),
-            tab.get_url()
-        ).into()),
+        0 => {
+            return Err(format!(
+                "No {} URLs found: {}",
+                page_type.file_extension().to_uppercase(),
+                tab.get_url()
+            )
+            .into());
+        }
         1 => urls.first().ok_or("No URLs found")?.to_string(),
         _ => urls
             .iter()
@@ -186,18 +184,24 @@ struct IgnoreList {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conf = Conf::parse();
     let artist_name = conf.artist_name;
-    let url = format!("https://musicbaran1.ir/artists/{}", urlencoding::encode(&artist_name));
+    let url = format!(
+        "https://musicbaran1.ir/artists/{}",
+        urlencoding::encode(&artist_name)
+    );
     let artist_name = artist_name.replace(['-', '_'], " ").to_lowercase();
 
-    let music_dir = if let Some(stripped) = conf.music_dir.to_str().and_then(|s| s.strip_prefix("~/")) {
-        dirs::home_dir()
-            .ok_or("Could not determine home directory")?
-            .join(stripped)
-    } else {
-        conf.music_dir
-    };
+    let music_dir =
+        if let Some(stripped) = conf.music_dir.to_str().and_then(|s| s.strip_prefix("~/")) {
+            dirs::home_dir()
+                .ok_or("Could not determine home directory")?
+                .join(stripped)
+        } else {
+            conf.music_dir
+        };
 
-    let ignore_path = conf.ignore.unwrap_or_else(|| music_dir.join("ignore_download_song.json"));
+    let ignore_path = conf
+        .ignore
+        .unwrap_or_else(|| music_dir.join("ignore_download_song.json"));
     let ignore: IgnoreList = if ignore_path.exists() {
         let data = fs::read_to_string(&ignore_path)?;
         serde_json::from_str(&data)?
@@ -218,11 +222,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build()?,
     )?;
 
-    let (albums_url, album_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
-    let (musics_url, music_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
+    let (albums_url, album_failures) =
+        get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
+    let (musics_url, music_failures) =
+        get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
 
-    let ignore_musics: std::collections::HashSet<_> = ignore.musics.iter().collect();
-    let ignore_albums: std::collections::HashSet<_> = ignore.albums.iter().collect();
+    let ignore_musics: std::collections::HashSet<_> =
+        ignore.musics.iter().map(|s| normalize_name(s)).collect();
+    let ignore_albums: std::collections::HashSet<_> =
+        ignore.albums.iter().map(|s| normalize_name(s)).collect();
 
     let musics_url: HashMap<_, _> = musics_url
         .into_iter()
