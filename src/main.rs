@@ -76,7 +76,8 @@ fn get_urls(
                 exist.get(&page_type),
                 &page_type,
             ) {
-                Ok((key, value)) => Some((key, value)),
+                Ok((key, value)) if !value.is_empty() => Some((key, value)),
+                Ok(_) => None,
                 Err(e) => {
                     println!("Failed to process {}: {}", href, e);
                     None
