@@ -1,14 +1,19 @@
-# 🎵 Song Downloader
+# Song Downloader
 
-A CLI tool to scrape **MusicBaran** and retrieve direct download links for songs by a given artist.
+A CLI tool to scrape **MusicBaran** and retrieve direct download links for songs/albums by a given artist.
 
-## 🚀 Features
-- Scrapes **MusicBaran** for songs by a specified artist.
-- Extracts direct URLs of music files.
-- Check doesn't exist music (default: `~/Music`).
+## Features
 
-## 📦 Installation
-Ensure you have **Rust** installed, then build the project:
+- Scrapes **MusicBaran** for songs and albums by a specified artist.
+- Extracts direct download URLs (prefers 320kbps over 128kbps).
+- Skips already-downloaded songs/albums by scanning a local music directory.
+- Ignore list to skip specific songs/albums via JSON file.
+- Outputs a clean JSON file with `{ "musics": {}, "albums": {} }` structure.
+- Runs headless by default, with `--headless` flag available.
+
+## Installation
+
+Requires **Rust** (edition 2024).
 
 ```sh
 git clone https://github.com/SAMoosavi/song-downloader.git
@@ -16,28 +21,63 @@ cd song-downloader
 cargo build --release
 ```
 
-## 🛠️ Usage
-
-Run the program with an artist's name:
+## Usage
 
 ```sh
-./target/release/song-downloader "Artist Name"
+./target/release/song-downloader "artist-name" --music-dir /path/to/music
 ```
 
-By default, songs are saved in `~/Music`. You can specify a custom directory:
+### Arguments
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `ARTIST_NAME` | Artist name (supports `-` and `_` separators) | *required* |
+| `--music-dir` | Local music directory to scan for existing files | `~/Music` |
+| `--headless` | Run browser in headless mode | `false` |
+| `--ignore` | Path to ignore list JSON file | `music_dir/ignore_download_song.json` |
+
+### Examples
 
 ```sh
-./target/release/song-downloader "Artist Name" --music-dir "/path/to/music"
-```
-
-## 📜 Example
-```sh
+# Basic usage
 ./target/release/song-downloader "siavash ghomayshi"
-```
-🔹 This will fetch download links for **siavash-ghomayshi**'s songs soen't exist them in `~/Music`.
 
-⭐ **Contributions & Issues**  
-Feel free to submit **issues** or **pull requests** to improve the tool!  
+# Custom music directory
+./target/release/song-downloader "siavash ghomayshi" --music-dir "/run/media/sam/music/Siavash Ghomayshi/"
+
+# Headless mode with custom ignore file
+./target/release/song-downloader "siavash ghomayshi" --music-dir ~/Music/Artist/ --headless --ignore ~/my-ignore.json
 ```
 
-This `README.md` provides a clean, structured introduction with clear usage instructions. Let me know if you'd like any modifications! 🚀
+## Ignore List
+
+Create an `ignore_download_song.json` file in your music directory (or specify a custom path with `--ignore`):
+
+```json
+{
+  "musics": ["khazoon 2", "mohabat remix"],
+  "albums": ["singles", "yadegari 2"]
+}
+```
+
+Names are matched case-insensitively with spaces normalized (hyphens/underscores become spaces).
+
+## Output
+
+The tool creates a JSON file named `<artist-name>.json` in the current directory:
+
+```json
+{
+  "musics": {
+    "taghdim": "https://dl.dlmusicbaran.ir/...",
+    "nakhoda": "https://dl.dlmusicbaran.ir/..."
+  },
+  "albums": {
+    "neghab": "https://dl.dlmusicbaran.ir/..."
+  }
+}
+```
+
+## License
+
+Contributions & Issues welcome via pull requests.
