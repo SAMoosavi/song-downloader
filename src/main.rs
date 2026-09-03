@@ -5,6 +5,7 @@ use find_exist::{Exist, get_list_of_exist};
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use rayon::iter::*;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
+use serde::Serialize;
 
 trait MediaCollection {
     type CollectionType;
@@ -163,6 +164,12 @@ struct Conf {
     music_dir: PathBuf,
 }
 
+#[derive(Serialize)]
+struct Output {
+    musics: HashMap<String, String>,
+    albums: HashMap<String, String>,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conf = Conf::parse();
     let artist_name = conf.artist_name;
@@ -172,15 +179,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let browser = Browser::new(
         LaunchOptionsBuilder::default()
-            .headless(true) // Set to false to show the browser
+            .headless(false) // Set to false to show the browser
             .build()?,
     )?;
 
     let albums_url = get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
     let musics_url = get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
 
+    let output = Output {
+        musics: musics_url,
+        albums: albums_url,
+    };
     let mut file = fs::File::create(format!("{artist_name}.json"))?;
-    file.write_all(format!("{:?}\n{:?}", musics_url, albums_url).as_bytes())?;
+    file.write_all(serde_json::to_string_pretty(&output)?.as_bytes())?;
 
     Ok(())
 }

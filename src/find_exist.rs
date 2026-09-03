@@ -1,6 +1,7 @@
 use std::{error::Error, fs, path::PathBuf};
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Exist {
     pub albums: Vec<String>,
     pub musics: Vec<String>,
