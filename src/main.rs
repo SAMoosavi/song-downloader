@@ -175,7 +175,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let artist_name = conf.artist_name;
     let url = format!("https://musicbaran1.ir/artists/{artist_name}");
     let artist_name = artist_name.replace(['-', '_'], " ").to_lowercase();
-    let exist = get_list_of_exist(&artist_name, conf.music_dir)?;
+
+    let music_dir = if let Some(stripped) = conf.music_dir.to_str().and_then(|s| s.strip_prefix("~/")) {
+        dirs::home_dir()
+            .ok_or("Could not determine home directory")?
+            .join(stripped)
+    } else {
+        conf.music_dir
+    };
+
+    let exist = get_list_of_exist(&artist_name, music_dir)?;
 
     let browser = Browser::new(
         LaunchOptionsBuilder::default()

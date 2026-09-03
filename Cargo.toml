@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+dirs = "6"
 headless_chrome = "1"
 rayon = "1"
 serde = { version = "1", features = ["derive"] }
