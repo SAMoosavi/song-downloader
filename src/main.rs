@@ -4,6 +4,7 @@ use clap::Parser;
 use find_exist::{Exist, get_list_of_exist, normalize_name};
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use rayon::iter::*;
+use serde::Deserialize;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
 use serde::Serialize;
 
@@ -163,12 +164,23 @@ struct Conf {
 
     #[arg(long)]
     headless: bool,
+
+    #[arg(long)]
+    ignore: Option<PathBuf>,
 }
 
 #[derive(Serialize)]
 struct Output {
     musics: HashMap<String, String>,
     albums: HashMap<String, String>,
+}
+
+#[derive(Deserialize, Default)]
+struct IgnoreList {
+    #[serde(default)]
+    musics: Vec<String>,
+    #[serde(default)]
+    albums: Vec<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -183,6 +195,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .join(stripped)
     } else {
         conf.music_dir
+    };
+
+    let ignore_path = conf.ignore.unwrap_or_else(|| music_dir.join("ignore_download_song.json"));
+    let ignore: IgnoreList = if ignore_path.exists() {
+        let data = fs::read_to_string(&ignore_path)?;
+        serde_json::from_str(&data)?
+    } else {
+        IgnoreList::default()
     };
 
     let exist = get_list_of_exist(&artist_name, music_dir)?;
@@ -200,6 +220,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (albums_url, album_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
     let (musics_url, music_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
+
+    let ignore_musics: std::collections::HashSet<_> = ignore.musics.iter().collect();
+    let ignore_albums: std::collections::HashSet<_> = ignore.albums.iter().collect();
+
+    let musics_url: HashMap<_, _> = musics_url
+        .into_iter()
+        .filter(|(k, _)| !ignore_musics.contains(k))
+        .collect();
+    let albums_url: HashMap<_, _> = albums_url
+        .into_iter()
+        .filter(|(k, _)| !ignore_albums.contains(k))
+        .collect();
 
     let output = Output {
         musics: musics_url,
