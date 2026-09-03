@@ -136,11 +136,11 @@ fn get_url(tab: &Arc<Tab>, page_type: &MediaType) -> Result<String, Box<dyn std:
         .collect();
 
     let url = match urls.len() {
-        0 => format!(
+        0 => return Err(format!(
             "No {} URLs found: {}",
             page_type.file_extension().to_uppercase(),
             tab.get_url()
-        ),
+        ).into()),
         1 => urls.first().ok_or("No URLs found")?.to_string(),
         _ => urls
             .iter()
