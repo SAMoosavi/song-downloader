@@ -156,6 +156,9 @@ struct Conf {
 
     #[arg(short, long, default_value = "~/Music")]
     music_dir: PathBuf,
+
+    #[arg(long)]
+    headless: bool,
 }
 
 #[derive(Serialize)]
@@ -182,7 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let browser = Browser::new(
         LaunchOptionsBuilder::default()
-            .headless(false) // Set to false to show the browser
+            .headless(conf.headless)
             .build()?,
     )?;
 
