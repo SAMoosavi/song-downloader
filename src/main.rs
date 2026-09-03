@@ -7,6 +7,8 @@ use rayon::iter::*;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
 
+type UrlMap = HashMap<String, String>;
+
 enum MediaType {
     Music,
     Album,
@@ -35,7 +37,7 @@ fn get_urls(
     artist_name: &str,
     exist: &Exist,
     page_type: MediaType,
-) -> Result<(HashMap<String, String>, Vec<String>), Box<dyn std::error::Error>> {
+) -> Result<(UrlMap, Vec<String>), Box<dyn std::error::Error>> {
     let tab = browser.new_tab()?;
 
     tab.navigate_to(&format!("{}/?section={}", url, page_type))?;
@@ -169,8 +171,8 @@ struct Conf {
 
 #[derive(Serialize)]
 struct Output {
-    musics: HashMap<String, String>,
-    albums: HashMap<String, String>,
+    musics: UrlMap,
+    albums: UrlMap,
 }
 
 #[derive(Deserialize, Default)]
