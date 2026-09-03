@@ -35,7 +35,7 @@ fn get_urls(
     artist_name: &str,
     exist: &Exist,
     page_type: MediaType,
-) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+) -> Result<(HashMap<String, String>, Vec<String>), Box<dyn std::error::Error>> {
     let tab = browser.new_tab()?;
 
     tab.navigate_to(&format!("{}/?section={}", url, page_type))?;
@@ -45,13 +45,13 @@ fn get_urls(
             Ok(el) => el,
             Err(_) => {
                 let _ = tab.close_target();
-                return Ok(HashMap::new());
+                return Ok((HashMap::new(), Vec::new()));
             }
         };
 
     // ponytail: par_iter assumes Browser::new_tab() is thread-safe via internal locking.
     // If race conditions appear (duplicate tabs, lost navigation), switch to .iter().
-    let urls = elements
+    let results: Vec<_> = elements
         .par_iter()
         .filter_map(|element| {
             let href = element.get_attribute_value("href").ok().flatten()?;
@@ -68,19 +68,25 @@ fn get_urls(
                 exist_list,
                 &page_type,
             ) {
-                Ok((key, value)) if !value.is_empty() => Some((key, value)),
+                Ok((key, value)) if !value.is_empty() => Some(Ok((key, value))),
                 Ok(_) => None,
-                Err(e) => {
-                    println!("Failed to process {}: {}", href, e);
-                    None
-                }
+                Err(e) => Some(Err(format!("{}: {}", href, e))),
             }
         })
         .collect();
 
     let _ = tab.close_target();
 
-    Ok(urls)
+    let mut urls = HashMap::new();
+    let mut failures = Vec::new();
+    for result in results {
+        match result {
+            Ok((k, v)) => { urls.insert(k, v); }
+            Err(f) => failures.push(f),
+        }
+    }
+
+    Ok((urls, failures))
 }
 
 fn navigate_to_media(
@@ -180,8 +186,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build()?,
     )?;
 
-    let albums_url = get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
-    let musics_url = get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
+    let (albums_url, album_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Album)?;
+    let (musics_url, music_failures) = get_urls(&browser, &url, &artist_name, &exist, MediaType::Music)?;
 
     let output = Output {
         musics: musics_url,
@@ -189,6 +195,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut file = fs::File::create(format!("{artist_name}.json"))?;
     file.write_all(serde_json::to_string_pretty(&output)?.as_bytes())?;
+
+    let all_failures: Vec<_> = album_failures.into_iter().chain(music_failures).collect();
+    if !all_failures.is_empty() {
+        eprintln!("\nFailed to process {} URL(s):", all_failures.len());
+        for f in &all_failures {
+            eprintln!("  - {}", f);
+        }
+    }
 
     Ok(())
 }
