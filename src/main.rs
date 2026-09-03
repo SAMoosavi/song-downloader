@@ -7,11 +7,6 @@ use rayon::iter::*;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
 use serde::Serialize;
 
-trait MediaCollection {
-    type CollectionType;
-    fn get<'a>(&'a self, t: &MediaType) -> &'a Self::CollectionType;
-}
-
 enum MediaType {
     Music,
     Album,
@@ -30,16 +25,6 @@ impl std::fmt::Display for MediaType {
         match self {
             MediaType::Music => write!(f, "music"),
             MediaType::Album => write!(f, "album"),
-        }
-    }
-}
-
-impl MediaCollection for Exist {
-    type CollectionType = Vec<String>;
-    fn get<'a>(&'a self, t: &MediaType) -> &'a Self::CollectionType {
-        match t {
-            MediaType::Music => &self.musics,
-            MediaType::Album => &self.albums,
         }
     }
 }
@@ -69,11 +54,16 @@ fn get_urls(
         .filter_map(|element| {
             let href = element.get_attribute_value("href").ok().flatten()?;
 
+            let exist_list = match page_type {
+                MediaType::Music => &exist.musics,
+                MediaType::Album => &exist.albums,
+            };
+
             match navigate_to_media(
                 browser,
                 &href,
                 artist_name,
-                exist.get(&page_type),
+                exist_list,
                 &page_type,
             ) {
                 Ok((key, value)) if !value.is_empty() => Some((key, value)),
