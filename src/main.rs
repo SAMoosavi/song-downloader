@@ -126,9 +126,7 @@ fn navigate_to_media(
 fn get_url(tab: &Arc<Tab>, page_type: &MediaType) -> Result<String, Box<dyn std::error::Error>> {
     let elements = match page_type {
         MediaType::Music => tab.wait_for_elements("div.dl > div.link_dl > a.button--wayra")?,
-        MediaType::Album => tab
-            .wait_for_elements("a.button--wayra")
-            .or_else(|_| tab.wait_for_elements(".details > p > a:nth-child(1)"))?,
+        MediaType::Album => tab.wait_for_elements("a[href$='.zip']")?,
     };
 
     let urls: Vec<_> = elements
