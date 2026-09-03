@@ -183,6 +183,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let exist = get_list_of_exist(&artist_name, music_dir)?;
 
+    ctrlc::set_handler(|| {
+        eprintln!("\nInterrupted. Cleaning up...");
+        std::process::exit(1);
+    })?;
+
     let browser = Browser::new(
         LaunchOptionsBuilder::default()
             .headless(conf.headless)
