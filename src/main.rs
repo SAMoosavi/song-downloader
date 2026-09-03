@@ -173,7 +173,7 @@ struct Output {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conf = Conf::parse();
     let artist_name = conf.artist_name;
-    let url = format!("https://musicbaran1.ir/artists/{artist_name}");
+    let url = format!("https://musicbaran1.ir/artists/{}", urlencoding::encode(&artist_name));
     let artist_name = artist_name.replace(['-', '_'], " ").to_lowercase();
 
     let music_dir = if let Some(stripped) = conf.music_dir.to_str().and_then(|s| s.strip_prefix("~/")) {
