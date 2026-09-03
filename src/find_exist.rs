@@ -114,7 +114,7 @@ fn normalize_music_name(file_name: &str, artist_name: &str) -> String {
 }
 
 // Normalize directory names for comparison
-fn normalize_name(name: &str) -> String {
+pub fn normalize_name(name: &str) -> String {
     name.replace(['-', '_'], " ")
         .to_lowercase()
         .trim()

@@ -1,7 +1,7 @@
 mod find_exist;
 
 use clap::Parser;
-use find_exist::{Exist, get_list_of_exist};
+use find_exist::{Exist, get_list_of_exist, normalize_name};
 use headless_chrome::{Browser, LaunchOptionsBuilder, Tab};
 use rayon::iter::*;
 use std::{collections::HashMap, fs, io::Write, path::PathBuf, sync::Arc};
@@ -97,15 +97,12 @@ fn navigate_to_media(
     exist: &[String],
     page_type: &MediaType,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
-    let name = href
+    let raw_name = href
         .split('/')
         .rev()
         .nth(1)
-        .ok_or("Invalid URL structure: unable to extract music name")?
-        .replace(['-', '_'], " ")
-        .replace(artist_name, "")
-        .trim()
-        .to_string();
+        .ok_or("Invalid URL structure: unable to extract music name")?;
+    let name = normalize_name(&raw_name.replace(artist_name, ""));
 
     if exist.contains(&name) {
         return Ok((name, String::new()));
