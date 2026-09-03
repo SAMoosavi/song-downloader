@@ -103,7 +103,7 @@ fn navigate_to_media(
     tab.navigate_to(href)?;
 
     let result = get_url(&tab, page_type);
-    tab.close_target()?;
+    let _ = tab.close_target();
 
     match result {
         Ok(url) => Ok((name, url)),
