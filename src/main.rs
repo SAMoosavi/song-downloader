@@ -49,6 +49,8 @@ fn get_urls(
             }
         };
 
+    // ponytail: par_iter assumes Browser::new_tab() is thread-safe via internal locking.
+    // If race conditions appear (duplicate tabs, lost navigation), switch to .iter().
     let urls = elements
         .par_iter()
         .filter_map(|element| {
