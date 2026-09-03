@@ -101,7 +101,11 @@ fn navigate_to_media(
         .rev()
         .nth(1)
         .ok_or("Invalid URL structure: unable to extract music name")?;
-    let name = normalize_name(raw_name).replace(artist_name, "").trim().to_string();
+    let normalized = normalize_name(raw_name).replace(artist_name, "");
+    let name = match normalized.find("  ") {
+        Some(pos) => normalized[pos + 2..].trim().to_string(),
+        None => normalized.trim().to_string(),
+    };
 
     if exist.contains(&name) {
         return Ok((name, String::new()));
